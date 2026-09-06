@@ -1,0 +1,135 @@
+// This example combines the previous 01 and 02 examples and alternates between the two modes
+// to demonstrate runtime mode-switching.
+
+// First display: 320x240x8pp graphics,  line-draw, palette setting,
+// Next display:  Text display
+
+
+// 16-bit Adafruit_GFX-compatible framebuffer for RP2350 HSTX
+
+#include <Adafruit_dvhstx.h>
+
+#if defined(ADAFRUIT_FEATHER_RP2350_HSTX)
+DVHSTXPinout pinConfig = ADAFRUIT_FEATHER_RP2350_CFG;
+#elif defined(ADAFRUIT_METRO_RP2350)
+DVHSTXPinout pinConfig = ADAFRUIT_METRO_RP2350_CFG;
+#elif defined(ARDUINO_ADAFRUIT_FRUITJAM_RP2350)
+DVHSTXPinout pinConfig = ADAFRUIT_FRUIT_JAM_CFG;
+#elif (defined(ARDUINO_RASPBERRY_PI_PICO_2) || defined(ARDUINO_RASPBERRY_PI_PICO_2W))
+DVHSTXPinout pinConfig = ADAFRUIT_HSTXDVIBELL_CFG;
+#else
+// If your board definition has PIN_CKP and related defines,
+// DVHSTX_PINOUT_DEFAULT is available
+DVHSTXPinout pinConfig = DVHSTX_PINOUT_DEFAULT;
+#endif
+
+void* display = nullptr;
+
+// If you get the message "error: 'DVHSTX_PINOUT_DEFAULTx' was not declared"
+// then you need to give the pins numbers explicitly, like the example below.
+// The order is: {CKP, D0P, D1P, D2P} DVHSTX8 display({12, 14, 16, 18},
+// DVHSTX_RESOLUTION_640x360);
+
+
+#define gdisplay ((DVHSTX8*)display)
+#define tdisplay ((DVHSTXText*)display)
+
+struct moving_point {
+    int x, y, dx, dy;
+    void step() {
+        x += dx;
+        if (x < 0) { x = 0; dx = random(3) + 1; }
+        if (x >= gdisplay->width()) { x = gdisplay->width() - 1; dx = -random(3) - 1; }
+
+        y += dy;
+        if (y < 0) { y = 0; dy = random(3) + 1; }
+        if (y >= gdisplay->height()) { y = gdisplay->height() - 1; dy = -random(3) - 1; }
+    }
+};
+
+moving_point p1, p2;
+
+int random_with_sign(int n) {
+    return random(2) ? random(n-1)+1 : -random(n-1)-1;
+}
+
+void setup() {
+  Serial.begin(115200);
+  while(!Serial);
+  display = new DVHSTX8(pinConfig, DVHSTX_RESOLUTION_320x240);
+// DVHSTXText textdisplay(pinConfig);
+
+
+  if (!gdisplay->begin()) { // Blink LED if insufficient RAM
+    Serial.println("init gdisplay init fail");
+    pinMode(LED_BUILTIN, OUTPUT);
+    for (;;)
+      digitalWrite(LED_BUILTIN, (millis() / 500) & 1);
+  }
+  Serial.println(gdisplay->width());
+  Serial.println(gdisplay->height());
+  p1 = moving_point{random(gdisplay->width()), random(gdisplay->height()), random_with_sign(3), random_with_sign(3)};
+  p2 = moving_point{random(gdisplay->width()), random(gdisplay->height()), random_with_sign(3), random_with_sign(3)};
+
+
+}
+
+void loop() {
+  static int j;
+  for(int q=0;q<1000;q++)
+  {
+    gdisplay->drawLine(p1.x, p1.y, p2.x, p2.y, 1 + (j + 254) % 255);
+    p1.step();
+    p2.step();
+    for(int i=1; i<256; i++) 
+      gdisplay->setColor(i, ((i + j) % 255) * 0x010101);
+    j += 1;
+    sleep_ms(5);
+  }
+
+  Serial.println("ending gdemo");
+  sleep_ms(2000);
+
+  //gdisplay->end();
+  gdisplay->end();
+  delete gdisplay;
+  Serial.println("starting tdemo");
+  display = new DVHSTXText(pinConfig);
+  Serial.println("starting tdisplay init");
+  if (!tdisplay->begin()) { // Blink LED if insufficient RAM
+    Serial.println("tdisplay init fail!");
+    pinMode(LED_BUILTIN, OUTPUT);
+    for (;;)
+      digitalWrite(LED_BUILTIN, (millis() / 500) & 1);
+  }
+  Serial.println("tdisplay init done");
+  tdisplay->setColor(TextColor::TEXT_BLACK, TextColor::BG_WHITE);
+  tdisplay->clear();
+  tdisplay->showCursor();
+  tdisplay->print("display initialized (black on white background)\n\n\n\n\n");
+  tdisplay->println("line wrap test. one line should be full of 'w's and the "
+                  "next line should start 'xy'.");
+  for (int i = 0; i < tdisplay->width(); i++)
+    tdisplay->write('w');
+  tdisplay->println("xy");
+  tdisplay->println(tdisplay->width());
+  tdisplay->println(tdisplay->height());
+  
+  Serial.println("tdemo ending");  
+  sleep_ms(5000);
+
+
+  //tdisplay->end();
+  tdisplay->end();
+  delete tdisplay;
+  Serial.println("starting gdemo");
+  display = new DVHSTX8(pinConfig, DVHSTX_RESOLUTION_320x240);
+  if (!gdisplay->begin()) { // Blink LED if insufficient RAM
+    Serial.println("gdisplay init fail");
+    pinMode(LED_BUILTIN, OUTPUT);
+    for (;;)
+      digitalWrite(LED_BUILTIN, (millis() / 500) & 1);
+  }
+  Serial.println("gdisplay init done");
+  
+}
