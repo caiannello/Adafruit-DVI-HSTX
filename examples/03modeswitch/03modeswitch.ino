@@ -54,6 +54,33 @@ int random_with_sign(int n) {
     return random(2) ? random(n-1)+1 : -random(n-1)-1;
 }
 
+void setGradientColor(uint8_t index, uint8_t offset) {
+  static const uint8_t stops[][3] = {
+    { 0, 0, 0 },
+    { 0, 0, 255 },
+    { 255, 0, 0 },
+    { 255, 255, 0 },
+    { 255, 255, 255 }
+  };
+  static const uint8_t stopPositions[] = { 0, 64, 128, 192, 255 };
+
+  uint16_t position = (index + offset) & 0xff;
+  uint8_t stop = 0;
+  while (stop < 3 && position > stopPositions[stop + 1])
+    stop++;
+
+  uint16_t start = stopPositions[stop];
+  uint16_t range = stopPositions[stop + 1] - start;
+  uint16_t distance = position - start;
+  uint8_t color[3];
+  for (int channel = 0; channel < 3; channel++) {
+    color[channel] = stops[stop][channel] +
+                     (stops[stop + 1][channel] - stops[stop][channel]) *
+                         distance / range;
+  }
+  gdisplay->setColor(index, color[0], color[1], color[2]);
+}
+
 void setup() {
   Serial.begin(115200);
   //while(!Serial);
@@ -80,8 +107,8 @@ void loop() {
     gdisplay->drawLine(p1.x, p1.y, p2.x, p2.y, 1 + (j + 254) % 255);
     p1.step();
     p2.step();
-    for(int i=1; i<256; i++) 
-      gdisplay->setColor(i, ((i + j) % 255) * 0x010101);
+    for (int i = 0; i < 256; i++)
+      setGradientColor(i, j);
     j += 1;
     sleep_ms(5);
   }
