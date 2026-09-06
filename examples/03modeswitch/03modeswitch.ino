@@ -1,4 +1,5 @@
-// This example combines the previous 01 and 02 examples and alternates between the two modes
+// This example combines the previous 01 and 02 examples, 
+// alternating between gfx and text modes,
 // to demonstrate runtime mode-switching.
 
 // First display: 320x240x8pp graphics,  line-draw, palette setting,
@@ -55,10 +56,8 @@ int random_with_sign(int n) {
 
 void setup() {
   Serial.begin(115200);
-  while(!Serial);
+  //while(!Serial);
   display = new DVHSTX8(pinConfig, DVHSTX_RESOLUTION_320x240);
-// DVHSTXText textdisplay(pinConfig);
-
 
   if (!gdisplay->begin()) { // Blink LED if insufficient RAM
     Serial.println("init gdisplay init fail");
@@ -87,22 +86,16 @@ void loop() {
     sleep_ms(5);
   }
 
-  Serial.println("ending gdemo");
-  sleep_ms(2000);
 
-  //gdisplay->end();
   gdisplay->end();
   delete gdisplay;
-  Serial.println("starting tdemo");
   display = new DVHSTXText(pinConfig);
-  Serial.println("starting tdisplay init");
   if (!tdisplay->begin()) { // Blink LED if insufficient RAM
     Serial.println("tdisplay init fail!");
     pinMode(LED_BUILTIN, OUTPUT);
     for (;;)
       digitalWrite(LED_BUILTIN, (millis() / 500) & 1);
   }
-  Serial.println("tdisplay init done");
   tdisplay->setColor(TextColor::TEXT_BLACK, TextColor::BG_WHITE);
   tdisplay->clear();
   tdisplay->showCursor();
@@ -115,14 +108,10 @@ void loop() {
   tdisplay->println(tdisplay->width());
   tdisplay->println(tdisplay->height());
   
-  Serial.println("tdemo ending");  
-  sleep_ms(5000);
+  sleep_ms(7000);
 
-
-  //tdisplay->end();
   tdisplay->end();
   delete tdisplay;
-  Serial.println("starting gdemo");
   display = new DVHSTX8(pinConfig, DVHSTX_RESOLUTION_320x240);
   if (!gdisplay->begin()) { // Blink LED if insufficient RAM
     Serial.println("gdisplay init fail");
@@ -130,6 +119,5 @@ void loop() {
     for (;;)
       digitalWrite(LED_BUILTIN, (millis() / 500) & 1);
   }
-  Serial.println("gdisplay init done");
   
 }
