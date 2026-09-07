@@ -101,7 +101,7 @@ void setup() {
 }
 
 void loop() {
-  static int j;
+  static int j=0;
   for(int q=0;q<1000;q++)
   {
     gdisplay->drawLine(p1.x, p1.y, p2.x, p2.y, 1 + (j + 254) % 255);
