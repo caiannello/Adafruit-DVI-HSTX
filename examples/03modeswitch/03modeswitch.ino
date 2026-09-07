@@ -113,8 +113,6 @@ void loop() {
     sleep_ms(5);
   }
 
-
-  gdisplay->end();
   delete gdisplay;
   display = new DVHSTXText(pinConfig);
   if (!tdisplay->begin()) { // Blink LED if insufficient RAM
@@ -137,7 +135,6 @@ void loop() {
   
   sleep_ms(7000);
 
-  tdisplay->end();
   delete tdisplay;
   display = new DVHSTX8(pinConfig, DVHSTX_RESOLUTION_320x240);
   if (!gdisplay->begin()) { // Blink LED if insufficient RAM
